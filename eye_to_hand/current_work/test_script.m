@@ -170,8 +170,10 @@ fprintf(2,'******* STARTING ******* \n');
 pause(0.1);
 
 
+%Initialize Colors for landmarks (Initial Reset)
+[return_code, spot_output, ~, ~, ~] = vrep.simxCallScriptFunction(ID, ['L_Prismatic_joint'] ,vrep.sim_scripttype_childscript(),'initColors',[spot],[],[],[],vrep.simx_opmode_blocking);
 while spot<6
-        
+    
     while mode==1
         
         time = time +1;
@@ -369,6 +371,7 @@ while spot<6
             
             %RED COLOR for the next landmark
             [return_code, spot_output, ~, ~, ~] = vrep.simxCallScriptFunction(ID, ['L_Prismatic_joint'] ,vrep.sim_scripttype_childscript(),'changeColorRed',[spot],[],[],[],vrep.simx_opmode_blocking);
+            
             fprintf(1,'GOING TOWARD LANDMARK: %d \n',spot);
             pause(2);
             
