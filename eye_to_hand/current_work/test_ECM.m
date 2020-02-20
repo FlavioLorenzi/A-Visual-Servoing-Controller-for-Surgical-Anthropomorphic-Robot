@@ -26,8 +26,8 @@ pause(3);
 [~, h_EE] =vrep.simxGetObjectHandle(ID, 'L4_visual_ECM', vrep.simx_opmode_blocking);   
 
 
-[~, h_PSM]=vrep.simxGetObjectHandle(ID, 'J2_TOOL1', vrep.simx_opmode_blocking);  %Utile per metterlo in contatto con PSM
-
+[~, h_PSM]=vrep.simxGetObjectHandle(ID, 'EE', vrep.simx_opmode_blocking);  %Utile per metterlo in contatto con PSM
+[~, h_RCM]=vrep.simxGetObjectHandle(ID, 'RCM_PSM1', vrep.simx_opmode_blocking);
 
 % reference for direct kin
 %joints (R R P R)
@@ -40,7 +40,7 @@ pause(3);
 % collection of all joint handles
 h_joints = [h_j1; h_j2; h_j3; h_j4];
 
-sync = utilsECM.syncronize(ID, vrep, h_joints, h_VS, h_EE);
+sync = utilsECM.syncronize(ID, vrep, h_joints, h_VS, h_EE, h_PSM);
 
 if sync
     fprintf(1,'Sycronization: OK... \n');
@@ -58,11 +58,16 @@ fprintf(2,'\n ******* STARTING ******* \n');
 
 
 
-target = utilsECM.getPose(h_VS,h_PSM,ID,vrep);  %TARGET_POSE  TODO! ! !
-disp(target); %RITORNA TUTTI ZERI.... PERCHE NON VEDE IL PSM???
+
+
+%home_pose = [ 0.2245; 0.0315; -0.1934; 0 ; 0.2 ; 3.14/2 ];
+
+%Calcolo home pose cercando dov'è l'ee_psm rispetto al nostro ecm_vision
+home_pose = utilsECM.getPose(h_PSM,h_VS,ID,vrep);  %TARGET_POSE  TODO! ! !
+disp(home_pose); %RITORNA TUTTI ZERI.... PERCHE NON VEDE IL PSM???
 %MI SERVE CONOSCERE LE COORDS DEL PSM_EE ! ! !
 
-home_pose = [ 0.2245; 0.0315; -0.1934; 0 ; 0.2 ; 3.14/2 ];
+
 
 
 while spot < 6 % spots are 5

@@ -24,7 +24,7 @@ classdef utilsECM
         end
         
         
-        function [sync]  = syncronize(ID, vrep, h_joints, h_VS, h_EE)
+        function [sync]  = syncronize(ID, vrep, h_joints, h_VS, h_EE, h_PSM)
             
             % used to wait to receive non zero values from vrep model
             
@@ -47,11 +47,15 @@ classdef utilsECM
             
             sync = false;
             while ~sync
-                % syncronizing position of EE wrt RCM
+                % syncronizing position of EE_ECM wrt VS
                 [~, v2]=vrep.simxGetObjectPosition(ID, h_EE, h_VS, vrep.simx_opmode_streaming);
                 [~, ~]=vrep.simxGetObjectOrientation(ID, h_EE, h_VS, vrep.simx_opmode_streaming);
                 
-              
+              % syncronizing position of PSM wrt ECM
+                [~, ~]=vrep.simxGetObjectPosition(ID, h_PSM, h_VS, vrep.simx_opmode_streaming);
+                [~, ~]=vrep.simxGetObjectOrientation(ID, h_PSM, h_VS, vrep.simx_opmode_streaming);
+                
+               
                 
                 sync = norm(v2,2)~=0;
                 
