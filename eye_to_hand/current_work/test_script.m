@@ -246,7 +246,7 @@ while spot<6
         
         error = image_error + force_correction;
         
-        time = time +1;
+       
         
         %__________________________________________________________________
         
