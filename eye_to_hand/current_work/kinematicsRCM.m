@@ -7,7 +7,7 @@ classdef kinematicsRCM
     end
     methods (Static)
         
-              function [pos] = direct_kinematics(Q)
+            function [pos] = direct_kinematics(Q)
             
             % computes position of EE wrt RCM given joints values
             % output is 3x1 vector
@@ -62,7 +62,7 @@ classdef kinematicsRCM
                 v = [0.3 0.3 0.3 0.3 0.3 0.3]*5; 
                 alfa = diag(v);
             end
-                                           
+            a = alfa*J*(err)                               
             % computing newton method for inverse kinematics
             Q = Q' + alfa*J*(err);
             
