@@ -84,8 +84,8 @@ classdef kinematicsECM
                        
             if mode==0                 
                 v = 6.5*[1 1 1 1 0.2 0]*10^-2;
-                alfa = zeros(3,4);
-                %J = pinv(J); % newton
+                alfa = zeros(4,3);
+                J = pinv(J); % 4x3
                 
             end
             
@@ -94,13 +94,14 @@ classdef kinematicsECM
                 v = [0.3 0.3 0.3 0.3 0.3 0.3]*5; 
                 alfa = diag(v);
             end
+           disp('ERROR');
+           disp(err);
            
-            %%NON TORNANO LE DIMENSIONI! ! ! ! ! QUINDI HO CAMBIATO LA
-            %%FORMULA-----> VEDI KINEMATICS RCM
-            
-            % computing newton method for inverse kinematics
-            Q = Q + J*(err);   %CHANGE PLACES
-            
+           %NON TORNANO LE DIMENSIONI QUINDI HO CAMBIATO LA DIM DI ERR!
+           
+           % computing newton method for inverse kinematics
+           Q = Q' + J*(err);   %(1x4) = (4x1) + (4x3)(3x1);
+           
         end
         
         function [Q] = getJoints(ID, vrep, h_joints)

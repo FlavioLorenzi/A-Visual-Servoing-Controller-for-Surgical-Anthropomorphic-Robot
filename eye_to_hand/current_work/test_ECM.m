@@ -15,19 +15,19 @@ pause(3);
 % CONNECTION TO VREP
 %%
 
-[ID,vrep] = utilsECM.init_connection();
+[ID,vrep] = utils.init_connection();
 
 % COLLECTING HANDLES
 
 % vision sensor
-[~, h_VS] =vrep.simxGetObjectHandle(ID, 'Vision_sensor_ECM', vrep.simx_opmode_blocking);
+[~, h_VS] =vrep.simxGetObjectHandle(ID, 'ECM_view', vrep.simx_opmode_blocking); %L2_visual_ECM
 
-% as end effector Consider the entire final structure
-[~, h_EE] =vrep.simxGetObjectHandle(ID, 'L4_visual_ECM', vrep.simx_opmode_blocking);   
+% as end effector Consider the lens of vs
+[~, h_EE] =vrep.simxGetObjectHandle(ID, 'Vision_sensor_ECM', vrep.simx_opmode_blocking);   
 
 
-[~, h_PSM]=vrep.simxGetObjectHandle(ID, 'EE', vrep.simx_opmode_blocking);  %Utile per metterlo in contatto con PSM
-[~, h_RCM]=vrep.simxGetObjectHandle(ID, 'RCM_PSM1', vrep.simx_opmode_blocking);
+[~, h_PSM]=vrep.simxGetObjectHandle(ID, 'EE', vrep.simx_opmode_blocking);  %Utile per metterlo in contatto con PSM -- J3_TOOL1
+
 
 % reference for direct kin
 %joints (R R P R)
@@ -40,14 +40,14 @@ pause(3);
 % collection of all joint handles
 h_joints = [h_j1; h_j2; h_j3; h_j4];
 
-sync = utilsECM.syncronize(ID, vrep, h_joints, h_VS, h_EE, h_PSM);
+sync = utils.syncronizeECM(ID, vrep, h_joints, h_VS, h_EE, h_PSM);
 
 if sync
     fprintf(1,'Sycronization: OK... \n');
     pause(1);
 end
 
-% end effector home pose wrt rcm
+
 
 mode = 0;
 spot = 0;
@@ -63,9 +63,14 @@ fprintf(2,'\n ******* STARTING ******* \n');
 %home_pose = [ 0.2245; 0.0315; -0.1934; 0 ; 0.2 ; 3.14/2 ];
 
 %Calcolo home pose cercando dov'è l'ee_psm rispetto al nostro ecm_vision
-home_pose = utilsECM.getPose(h_PSM,h_VS,ID,vrep);  %TARGET_POSE  TODO! ! !
-disp(home_pose); %RITORNA TUTTI ZERI.... PERCHE NON VEDE IL PSM???
-%MI SERVE CONOSCERE LE COORDS DEL PSM_EE ! ! !
+home_pose = utils.getPose(h_PSM,h_EE,ID,vrep);  %TARGET_POSE  
+disp('Compute HOME_POSE:');
+disp(home_pose); 
+
+%PROBLEMA: 
+%L'ee dell ECM sembra restare fermo mentre un altro punto cerca di
+%raggiungere l'obiettivo
+
 
 
 
@@ -87,8 +92,9 @@ while spot < 6 % spots are 5
         ee_pose= [ee_position, ee_orientation]';
         
         % 2) COMPUTE ERROR
-        err = utilsECM.computeError(home_pose,ee_pose);
-             
+        err = utils.computeErrorECM(home_pose,ee_pose);
+        
+        
         % 3) EVALUATE EXIT CONDITION (just on position)
         if norm(err,2)< 10^-3           
             spot = spot+1;
@@ -117,7 +123,7 @@ while spot < 6 % spots are 5
         if( mod(time,8)==0)
             
             x = time/100;
-            y = norm(err(2:4),2);
+            y = norm(err(1:3),2);
             % plot(x,y,'--b');
             subplot(2,1,1)
             stem(x,y,'-k');
