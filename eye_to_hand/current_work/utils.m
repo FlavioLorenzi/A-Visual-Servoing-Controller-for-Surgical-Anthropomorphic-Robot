@@ -86,6 +86,52 @@ classdef utils
             
         end
         
+        %%same for ECM
+        function [sync]  = syncronizeECM(ID, vrep, h_joints, h_VS, h_EE, h_PSM)
+            
+            % used to wait to receive non zero values from vrep model
+            
+            % usually matlab and vrep need few seconds to send valid values
+            vrep.simxAddStatusbarMessage(ID,' ', vrep.simx_opmode_oneshot);
+            vrep.simxAddStatusbarMessage(ID,'------------------------------------------------', vrep.simx_opmode_oneshot);          
+            vrep.simxAddStatusbarMessage(ID,'--- Matlab script CONNECTED ---', vrep.simx_opmode_oneshot);
+            vrep.simxAddStatusbarMessage(ID,'------------------------------------------------', vrep.simx_opmode_oneshot);
+            vrep.simxAddStatusbarMessage(ID,' ', vrep.simx_opmode_oneshot);
+
+            sync = false;
+            while ~sync
+                % syncronizing all joints
+                [~,~] = vrep.simxGetJointPosition(ID, h_joints(1), vrep.simx_opmode_streaming);
+                [~,~] = vrep.simxGetJointPosition(ID, h_joints(2), vrep.simx_opmode_streaming);
+                [~,~] = vrep.simxGetJointPosition(ID, h_joints(3), vrep.simx_opmode_streaming);
+                [~,v] = vrep.simxGetJointPosition(ID, h_joints(4), vrep.simx_opmode_streaming);
+                sync = norm(v,2)~=0;
+            end
+            
+            sync = false;
+            while ~sync
+                % syncronizing position of EE_ECM wrt VS
+                [~, v2]=vrep.simxGetObjectPosition(ID, h_EE, h_VS, vrep.simx_opmode_streaming);
+                [~, ~]=vrep.simxGetObjectOrientation(ID, h_EE, h_VS, vrep.simx_opmode_streaming);
+                
+              % syncronizing position of PSM wrt ECM
+                [~, ~]=vrep.simxGetObjectPosition(ID, h_PSM, h_EE, vrep.simx_opmode_streaming);
+                [~, ~]=vrep.simxGetObjectOrientation(ID, h_PSM, h_EE, vrep.simx_opmode_streaming);
+                
+               
+                
+                sync = norm(v2,2)~=0;
+                
+            end
+            
+            sync = false;
+            
+            
+           
+            
+            
+        end
+        
         
         function [J] = build_point_jacobian(u,v,z,fl)
             
@@ -139,6 +185,19 @@ classdef utils
             % error = [desired(1:3)- current(1:3); angdiff(current(4:6),desired(4:6) )];
             
         end
+        
+        
+        %same for ECM
+        function [error] = computeErrorECM(desired, current)
+            % computes error between poses
+            % angdiff(a,b) computes b-a
+            %ONLY ON X Y Z
+            error = desired(1:3)- current(1:3);
+           
+            
+        end
+        
+        
         
         function [] = compute_grasp(clientID, h_7sx, h_7dx, vrep)
             % NOT USED
