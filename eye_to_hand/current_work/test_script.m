@@ -96,7 +96,7 @@ K = diag( 0.8*[0.2 0.2 0.2 3.5 3.5 5.5]*10^-1);
 H = diag( [1 1 1 0.1 0.1 0.1]*10^-1);
 
 % compliance matrix of manipulator
-C = diag( [0.1 0.1 0.1 0 0 0]*1);
+C = diag( [0.1 0.1 0.1 0.1 0.1 0.1]*1);
 
 % preallocating for speed
 % us_desired = zeros(4,5);
@@ -227,7 +227,7 @@ while spot<6
             ghost_reached = true;
             %disp("Ghost has reached desired spot");
             %COLOR GREEN for the visited landmark
-            [return_code, spot_output, ~, ~, ~] = vrep.simxCallScriptFunction(ID, ['L_Prismatic_joint'] ,vrep.sim_scripttype_childscript(),'changeColorGreen',[spot],[],[],[],vrep.simx_opmode_blocking);
+            
          
             
         end
@@ -308,6 +308,7 @@ while spot<6
         if norm(distance2dummy(1:3),2) <= 10^-3 && ghost_reached
             mode =0;
             fprintf(1,'********** OK ********** \n');
+            [return_code, spot_output, ~, ~, ~] = vrep.simxCallScriptFunction(ID, ['L_Prismatic_joint'] ,vrep.sim_scripttype_childscript(),'changeColorGreen',[spot],[],[],[],vrep.simx_opmode_blocking);
             pause(3);
             ghost_reached = false;
             time = 0;

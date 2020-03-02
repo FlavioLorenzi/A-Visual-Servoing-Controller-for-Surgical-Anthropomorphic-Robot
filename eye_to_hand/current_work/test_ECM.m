@@ -20,7 +20,7 @@ pause(3);
 % COLLECTING HANDLES
 
 % vision sensor
-[~, h_VS] =vrep.simxGetObjectHandle(ID, 'ECM_view', vrep.simx_opmode_blocking); %L2_visual_ECM
+[~, h_VS] =vrep.simxGetObjectHandle(ID, 'L2_visual_ECM', vrep.simx_opmode_blocking); %L2_visual_ECM
 
 % as end effector Consider the lens of vs
 [~, h_EE] =vrep.simxGetObjectHandle(ID, 'Vision_sensor_ECM', vrep.simx_opmode_blocking);   
@@ -65,7 +65,7 @@ fprintf(2,'\n ******* STARTING ******* \n');
 %Calcolo home pose cercando dov'è l'ee_psm rispetto al nostro ecm_vision
 home_pose = utils.getPose(h_PSM,h_EE,ID,vrep);  %TARGET_POSE  
 disp('Compute HOME_POSE:');
-disp(home_pose); 
+ 
 
 %PROBLEMA: 
 %L'ee dell ECM sembra restare fermo mentre un altro punto cerca di
@@ -114,6 +114,7 @@ while spot < 6 % spots are 5
         [~] = vrep.simxSetJointPosition(ID, h_j2, Q(2), vrep.simx_opmode_streaming);
         [~] = vrep.simxSetJointPosition(ID, h_j3, Q(3), vrep.simx_opmode_streaming);
         [~] = vrep.simxSetJointPosition(ID, h_j4, Q(4), vrep.simx_opmode_streaming);
+        
         
        
         

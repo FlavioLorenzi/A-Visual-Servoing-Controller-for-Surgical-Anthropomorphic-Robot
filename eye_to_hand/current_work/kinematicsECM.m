@@ -94,8 +94,8 @@ classdef kinematicsECM
                 v = [0.3 0.3 0.3 0.3 0.3 0.3]*5; 
                 alfa = diag(v);
             end
-           disp('ERROR');
-           disp(err);
+
+         
            
            %NON TORNANO LE DIMENSIONI QUINDI HO CAMBIATO LA DIM DI ERR!
            

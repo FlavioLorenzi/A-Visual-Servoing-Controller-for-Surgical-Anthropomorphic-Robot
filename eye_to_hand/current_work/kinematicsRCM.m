@@ -61,8 +61,7 @@ classdef kinematicsRCM
                 % NOT USED 
                 v = [0.3 0.3 0.3 0.3 0.3 0.3]*5; 
                 alfa = diag(v);
-            end
-            a = alfa*J*(err)                               
+            end                                       
             % computing newton method for inverse kinematics
             Q = Q' + alfa*J*(err);
             
