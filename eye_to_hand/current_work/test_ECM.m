@@ -20,10 +20,10 @@ pause(3);
 % COLLECTING HANDLES
 
 % vision sensor
-[~, h_VS] =vrep.simxGetObjectHandle(ID, 'L2_visual_ECM', vrep.simx_opmode_blocking); %L2_visual_ECM
+[~, h_BP] =vrep.simxGetObjectHandle(ID, 'L4_visual_ECM', vrep.simx_opmode_blocking); 
 
 % as end effector Consider the lens of vs
-[~, h_EE] =vrep.simxGetObjectHandle(ID, 'Vision_sensor_ECM', vrep.simx_opmode_blocking);   
+[~, h_VS] =vrep.simxGetObjectHandle(ID, 'ECM_view', vrep.simx_opmode_blocking);   
 
 
 [~, h_PSM]=vrep.simxGetObjectHandle(ID, 'EE', vrep.simx_opmode_blocking);  %Utile per metterlo in contatto con PSM -- J3_TOOL1
@@ -40,7 +40,7 @@ pause(3);
 % collection of all joint handles
 h_joints = [h_j1; h_j2; h_j3; h_j4];
 
-sync = utils.syncronizeECM(ID, vrep, h_joints, h_VS, h_EE, h_PSM);
+sync = utils.syncronizeECM(ID, vrep, h_joints, h_BP, h_VS, h_PSM);
 
 if sync
     fprintf(1,'Sycronization: OK... \n');
@@ -63,7 +63,7 @@ fprintf(2,'\n ******* STARTING ******* \n');
 %home_pose = [ 0.2245; 0.0315; -0.1934; 0 ; 0.2 ; 3.14/2 ];
 
 %Calcolo home pose cercando dov'è l'ee_psm rispetto al nostro ecm_vision
-home_pose = utils.getPose(h_PSM,h_EE,ID,vrep);  %TARGET_POSE  
+home_pose = utils.getPose(h_PSM,h_BP,ID,vrep);  %TARGET_POSE  
 disp('Compute HOME_POSE:');
  
 
@@ -85,8 +85,8 @@ while spot < 6 % spots are 5
         
         % 1) READ CURRENT POSE OF EE_ECM wtr VS_ECM
         
-        [~, ee_position]=vrep.simxGetObjectPosition(ID, h_EE, h_VS, vrep.simx_opmode_streaming);
-        [~, ee_orientation]=vrep.simxGetObjectOrientation(ID, h_EE, h_VS, vrep.simx_opmode_streaming);
+        [~, ee_position]=vrep.simxGetObjectPosition(ID, h_VS, h_BP, vrep.simx_opmode_streaming);
+        [~, ee_orientation]=vrep.simxGetObjectOrientation(ID, h_VS, h_BP, vrep.simx_opmode_streaming);
         
         
         ee_pose= [ee_position, ee_orientation]';

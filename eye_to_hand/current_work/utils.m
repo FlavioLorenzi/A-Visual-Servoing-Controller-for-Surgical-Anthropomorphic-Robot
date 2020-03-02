@@ -87,6 +87,8 @@ classdef utils
         end
         
         %%same for ECM
+        %VS base frame BP
+        %EE sarebbe il VS
         function [sync]  = syncronizeECM(ID, vrep, h_joints, h_VS, h_EE, h_PSM)
             
             % used to wait to receive non zero values from vrep model
@@ -115,8 +117,8 @@ classdef utils
                 [~, ~]=vrep.simxGetObjectOrientation(ID, h_EE, h_VS, vrep.simx_opmode_streaming);
                 
               % syncronizing position of PSM wrt ECM
-                [~, ~]=vrep.simxGetObjectPosition(ID, h_PSM, h_EE, vrep.simx_opmode_streaming);
-                [~, ~]=vrep.simxGetObjectOrientation(ID, h_PSM, h_EE, vrep.simx_opmode_streaming);
+                [~, ~]=vrep.simxGetObjectPosition(ID, h_PSM, h_VS, vrep.simx_opmode_streaming);
+                [~, ~]=vrep.simxGetObjectOrientation(ID, h_PSM, h_VS, vrep.simx_opmode_streaming);
                 
                
                 
