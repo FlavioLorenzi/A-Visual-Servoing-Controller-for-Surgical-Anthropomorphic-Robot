@@ -1,5 +1,4 @@
-%--------------------------------------------------------------------------
-%   INIT STUFF
+%%   INIT STUFF
 
 cd(fileparts(mfilename('fullpath')));
 clear;
@@ -8,11 +7,11 @@ clc;
 
 pause(2);
 %--------------------------------------------------------------------------
-% CONNECTION TO VREP
+%% CONNECTION TO VREP
 
 [ID,vrep] = utils.init_connection();
 
-% COLLECTING HANDLES
+%% COLLECTING HANDLES
 
 %--------------------------------------------------------------------------
 
@@ -81,7 +80,7 @@ end
 
 %__________________________________________________________________________
 
-%   SETTINGS
+%%   SETTINGS
 %__________________________________________________________________________
 
 % focal length (depth of the near clipping plane)
@@ -90,40 +89,20 @@ fl = 0.01;
 % control gain in mode 1 (see below)
 % K = eye(6)*(10^-2)*1.5;
 % after tuning
-K = diag( 0.8*[0.2 0.2 0.2 3.5 3.5 5.5]*10^-1);
+K = diag( 0.9*[0.2 0.2 0.2 3.5 3.5 5.5]*10^-1);
 
 % control gain in mode 0 (see below)
 H = diag( [1 1 1 0.1 0.1 0.1]*10^-1);
 
 % compliance matrix of manipulator
-C = diag( [0.1 0.1 0.1 0.1 0.1 0.1]*1);
+C = diag( [0.1 0.1 0.06 0.01 0.01 0.01]*5);
 
-% preallocating for speed
-% us_desired = zeros(4,5);
-% vs_desired = zeros(4,5);
 us_ee = zeros(4,1);
 vs_ee = zeros(4,1);
 zs_ee = zeros(4,1);
 
 % null desired force and torque
 force_torque_d=zeros(6,1);
-
-% % desired features EXTRACTION
-% sync=false;
-% for b=1:4 % balls
-%     for s=1:5 % spots
-%         while ~sync % until i dont get valid values
-%             [~, l_position]=vrep.simxGetObjectPosition(ID, h_L(b,s), h_VS, vrep.simx_opmode_streaming);
-%             sync = norm(l_position,2)~=0;
-%         end
-%         sync=false;
-%
-%         % here you have all landmark positions in image plane (perspective)
-%         us_desired(b,s)= fl*l_position(1)/l_position(3);
-%         vs_desired(b,s)= fl*l_position(2)/l_position(3);
-%
-%     end
-% end
 
 sync=false;
 [us_desired, vs_desired] = utils.getLandmarksPosition(ID, vrep, h_VS, h_L, fl);
@@ -132,9 +111,9 @@ home_pose_wrt_world = [ -1.54;   -4.069e-2;    +7.25e-1;  -1.79e+2; -4.2305e-02;
 % sending new pose of dummy attached to EE wrt world
 utils.setPose(home_pose_wrt_world,h_Dummy,-1,ID,vrep);
 
-% starting from zero config
-kinematicsRCM.setJoints(ID, vrep, h_Joints, zeros(6,1));
-pause(3);
+%% starting from zero config
+% kinematicsRCM.setJoints(ID, vrep, h_Joints, zeros(6,1));
+pause(0.3);
 
 % getting home_pose wrt RCM for mode 0
 home_pose_wrt_RCM = utils.getPose(h_Dummy,h_RCM,ID,vrep);
@@ -142,7 +121,7 @@ home_pose_wrt_RCM = utils.getPose(h_Dummy,h_RCM,ID,vrep);
 %__________________________________________________________________________
 %__________________________________________________________________________
 
-%	PROCESS LOOP
+%%	PROCESS LOOP
 %__________________________________________________________________________
 %__________________________________________________________________________
 
@@ -151,36 +130,28 @@ home_pose_wrt_RCM = utils.getPose(h_Dummy,h_RCM,ID,vrep);
 
 vs2rcm = utils.getPose(h_RCM,h_VS,ID,vrep);
 
-%start from landmark at spot+1
-spot = 0; % round(rand*5)
-% first go to home pose in mode 0
-mode = 0;
-% time variable useful for plot ecc.
-time = 0;
+% spot = start from landmark at spot+1
+% mode = first go to home pose in mode 0
+% time = time variable useful for plot ecc.
+[spot,mode,time]=deal(0,0,0);
+
 % if ghost reached position of landmark (ghost is the dummy)
 ghost_reached = false;
 
-fprintf(2,'******* STARTING ******* \n');
-
-% used for the final plot
-
-% x_coord = zeros(1, 16000);
-% y_coord = zeros(1, 16000);
-% z_coord = zeros(1, 16000);
-pause(0.1);
-
+fprintf(2,'******* STARTING ******* \n'); pause(0.1);
 
 %Initialize Colors for landmarks (Initial Reset)
-[return_code, spot_output, ~, ~, ~] = vrep.simxCallScriptFunction(ID, ['L_Prismatic_joint'] ,vrep.sim_scripttype_childscript(),'initColors',[spot],[],[],[],vrep.simx_opmode_blocking);
+init_landmarks_color(ID,vrep)
+
 while spot<6
     
     while mode==1
         
         time = time +1;
-               
+        
         %__________________________________________________________________
         
-        %	1) FEATURES and DEPTH EXTRACTION
+        %% 	1) FEATURES and DEPTH EXTRACTION
         %__________________________________________________________________
         
         % GETTING CURRECT POSITION OF EE IN IMAGE PLANE
@@ -197,14 +168,12 @@ while spot<6
             
         end
         
-        % TO-DO
+        % TO-DO (future work)
         % [us_ee, vs_ee, zs_ee] = utils.get_EE_LandmarksPosition(ID, vrep, h_VS, h_L_EE, fl);
-        
-        
         
         %__________________________________________________________________
         
-        %	2) BUILDING the IMAGE JACOBIAN and COMPUTING THE ERROR (vision-based only)
+        %%	2) BUILDING the IMAGE JACOBIAN and COMPUTING THE ERROR (vision-based only)
         %__________________________________________________________________
         
         % building the jacobian
@@ -225,51 +194,44 @@ while spot<6
         
         if norm(image_error,2)<10^-5 && ghost_reached ==false
             ghost_reached = true;
-            %disp("Ghost has reached desired spot");
-            %COLOR GREEN for the visited landmark
-            
-         
             
         end
         
         %__________________________________________________________________
         
-        %	3) ADJUSTING the ERROR (via the force-based infos)
+        %%	3) ADJUSTING the ERROR (via the force-based infos)
         %__________________________________________________________________
         
         [~, ~, force, torque] = vrep.simxReadForceSensor(ID, h_FS, vrep.simx_opmode_streaming);
-        
         force_torque=[force'; torque'];
-        % force_torque=round(force_torque,2);
-        
         force_correction = L*C*(force_torque_d-force_torque);
         
         error = image_error + force_correction;
         
-       
-        
         %__________________________________________________________________
         
-        %	4) COMPUTING the EE DISPLACEMENT
+        %%	4) COMPUTING the EE DISPLACEMENT
         %__________________________________________________________________
         
         % computing the displacement
-        ee_displacement = K*pinv(-L)*error;
+        % the displacement is intregral of tau since K is a small value
+        % (small sampling time Ts)
+        ee_displacement_VS = K*pinv(-L)*error;
         
-        if norm(ee_displacement,2)<10^-2.5 %10^-2.9
-            ee_displacement = (ee_displacement/norm(ee_displacement,2))*10^-2.5;
+        if norm(ee_displacement_VS,2)<10^-2.5 %10^-2.9
+            ee_displacement_VS = (ee_displacement_VS/norm(ee_displacement_VS,2))*10^-2.5;
         end
         
         %__________________________________________________________________
         
-        %	5) UPDATING THE POSE
+        %%	5) UPDATING THE POSE
         %__________________________________________________________________
         
         % getting the current pose wrt VS
         ee_pose_VS = utils.getPose(h_Dummy,h_VS,ID,vrep);
         
         % getting the new pose
-        next_ee_pose_VS = ee_pose_VS + ee_displacement;
+        next_ee_pose_VS = ee_pose_VS + ee_displacement_VS;
         
         % getting next pose wrt RCM
         next_ee_wrt_RCM = utils.getPoseInRCM(vs2rcm, next_ee_pose_VS);
@@ -287,12 +249,12 @@ while spot<6
         ee_wrt_RCM = utils.getPose(h_EE, h_RCM,ID,vrep);
         
         % computing error
-        distance2dummy = utils.computeError(dummy_pose,ee_wrt_RCM);
+        pose_error = utils.computeError(next_ee_wrt_RCM,ee_wrt_RCM);
         
         Q = kinematicsRCM.getJoints(ID, vrep, h_Joints);
         
         % computing new configuration via inverse inverse kinematics
-        Q = kinematicsRCM.inverse_kinematics(Q,distance2dummy,0);
+        Q = kinematicsRCM.inverse_kinematics(Q,pose_error,0);
         
         % sending to joints
         kinematicsRCM.setJoints(ID, vrep, h_Joints, Q);
@@ -301,28 +263,27 @@ while spot<6
         x_coord(time) = ee_wrt_RCM(1);
         y_coord(time) = ee_wrt_RCM(2);
         z_coord(time) = ee_wrt_RCM(3);
-        force(time) = norm(force_correction,2);
         total_error(time) = norm(error,2);
         
-        % evaluating exit condition
-        if norm(distance2dummy(1:3),2) <= 10^-3 && ghost_reached
+        force = norm(round(force_torque,3));
+        
+        %% live plot of force and image error
+        if(mod(time,15)==0)
+            PlotData.plot_image_error_and_force(spot, us_ee, vs_ee, us_desired, vs_desired,force,time);
+        end
+        
+        ghost_reached
+        %% evaluating exit condition
+        if norm(pose_error(1:2)) <= 4*10^-4 && ghost_reached
+            
             mode =0;
+            stem(time, force,'g','square' ,'LineWidth', 2 );
+            
             fprintf(1,'********** OK ********** \n');
-            [return_code, spot_output, ~, ~, ~] = vrep.simxCallScriptFunction(ID, ['L_Prismatic_joint'] ,vrep.sim_scripttype_childscript(),'changeColorGreen',[spot],[],[],[],vrep.simx_opmode_blocking);
+            green_landmarks_color(ID,vrep,spot);
             pause(3);
             ghost_reached = false;
             time = 0;
-            
-            % plot EE position during last process
-            % PlotData.plot_EE(spot,[x_coord],[y_coord],[z_coord]);
-            
-            % plot of force and image error during time for last process
-            % PlotData.plot_ForceAndImageErr(spot, [force], [total_error]);
-                        
-        end   
-        
-        if(mod(time,10)==0)
-            PlotData.plot_image_error(spot, us_ee, vs_ee, us_desired, vs_desired);
         end
         
     end
@@ -350,36 +311,31 @@ while spot<6
         utils.setPose(dummy_pose, h_Dummy, h_RCM, ID, vrep);
         
         % COMPUTE ERROR
-        distance2dummy = utils.computeError(utils.getPose(h_Dummy,h_RCM,ID,vrep),utils.getPose(h_EE, h_RCM,ID,vrep));
+        pose_error = utils.computeError(utils.getPose(h_Dummy,h_RCM,ID,vrep),utils.getPose(h_EE, h_RCM,ID,vrep));
         
         Q = kinematicsRCM.getJoints(ID, vrep, h_Joints);
         
         % computing new configuration via inverse inverse kinematics
-        Q = kinematicsRCM.inverse_kinematics(Q,distance2dummy,0);
+        Q = kinematicsRCM.inverse_kinematics(Q,pose_error,0);
         
         kinematicsRCM.setJoints(ID, vrep, h_Joints, Q);
         
-        if(max(error)<=0.001 && norm(distance2dummy(1:3),2) <= 0.01)
+        if(max(error(1:3))<=0.1 && norm(pose_error(1:3),2) <= 0.01)
             spot = spot+1;
             
-            %Restore initial colors of landmarks
-            [return_code, spot_output, ~, ~, ~] = vrep.simxCallScriptFunction(ID, ['L_Prismatic_joint'] ,vrep.sim_scripttype_childscript(),'restoreColors',[spot],[],[],[],vrep.simx_opmode_blocking);
-            
             if spot>5
-                
+                % Restore initial colors of landmarks
+                init_landmarks_color(ID,vrep)
                 break
             end
             
-            %RED COLOR for the next landmark
-            [return_code, spot_output, ~, ~, ~] = vrep.simxCallScriptFunction(ID, ['L_Prismatic_joint'] ,vrep.sim_scripttype_childscript(),'changeColorRed',[spot],[],[],[],vrep.simx_opmode_blocking);
+            % RED COLOR for the next landmark
+            red_landmarks_color(ID,vrep,spot)
             
-            fprintf(1,'GOING TOWARD LANDMARK: %d \n',spot);
-            pause(2);
+            fprintf(1,'GOING TOWARD LANDMARK: %d \n',spot); pause(2);
             
             mode=1;
-            
             figure(spot);
-            
             
         end
         
@@ -388,3 +344,15 @@ while spot<6
 end
 
 fprintf(2,'**** PROCESS ENDED ***** \n');
+
+function [] = init_landmarks_color(ID,vrep)
+%Initialize Colors for landmarks (Initial Reset)
+[~, ~, ~, ~, ~] = vrep.simxCallScriptFunction(ID, ['L_Prismatic_joint'] ,vrep.sim_scripttype_childscript(),'initColors',[1],[],[],[],vrep.simx_opmode_blocking);
+end
+function [] = green_landmarks_color(ID,vrep,spot)
+[~, ~, ~, ~, ~] = vrep.simxCallScriptFunction(ID, ['L_Prismatic_joint'] ,vrep.sim_scripttype_childscript(),'changeColorGreen',[spot],[],[],[],vrep.simx_opmode_blocking);
+end
+
+function [] = red_landmarks_color(ID,vrep,spot)
+[~, ~, ~, ~, ~] = vrep.simxCallScriptFunction(ID, ['L_Prismatic_joint'] ,vrep.sim_scripttype_childscript(),'changeColorRed',[spot],[],[],[],vrep.simx_opmode_blocking);
+end
