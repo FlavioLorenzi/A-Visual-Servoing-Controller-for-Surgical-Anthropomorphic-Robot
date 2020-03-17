@@ -1,4 +1,3 @@
 # MedicalRobotics
-Medical Robotics project with VREP and Matlab : simulations with Da Vinci Robot\\
-Surgical task: saturing
+Medical Robotics project with VREP and Matlab. Simulations with Da Vinci Robot with surgical task of saturing.
 
