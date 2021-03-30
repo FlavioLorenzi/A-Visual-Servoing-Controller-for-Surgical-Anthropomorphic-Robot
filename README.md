@@ -1,4 +1,4 @@
-# medrob-project
+# A Visual Servoing Controller for Surgical Anthropomorphic Robot (Da Vinci)
 
 Final Project for Medical Robotics course 2018-2019, Università La Sapienza Roma
 
